@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-// Não precisamos mais de um CSS específico aqui, o global já resolve
-// import './Chatbot.css'; 
 
 function Chatbot({ isHome, onClose }) {
   const [message, setMessage] = useState('');
@@ -10,18 +8,16 @@ function Chatbot({ isHome, onClose }) {
   ]);
   const [isLoading, setIsLoading] = useState(false);
   
-  // 1. MUDANÇA: Vamos usar uma ref para o próprio container do histórico
   const historyContainerRef = useRef(null);
   const textareaRef = useRef(null);
 
-  // 2. MUDANÇA: A lógica de scroll foi ajustada para ser mais precisa
+
   useEffect(() => {
     const container = historyContainerRef.current;
     if (container) {
-      // Em vez de scrollIntoView, definimos a posição do scroll manualmente
       container.scrollTop = container.scrollHeight;
     }
-  }, [chatHistory]); // Roda toda vez que o histórico de chat muda
+  }, [chatHistory]); 
 
   useEffect(() => {
     if (textareaRef.current) {
