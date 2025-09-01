@@ -44,9 +44,80 @@
 .app-wrapper {
   display: flex;
   flex-direction: column;
-  min-height: 100vh; 
+  min-height: 100vh;
 }
 
 main {
-  flex-grow: 1; 
+  flex: 1; 
+  padding: 20px; 
+  max-width: 1200px; 
+  margin: 0 auto; 
+  width: 100%; 
+  box-sizing: border-box; 
 }
+
+
+@media (max-width: 768px) {
+  
+  main {
+    max-width: 100%; 
+    padding: 0;   
+  }
+  
+  .page-content,
+  .container { 
+    width: 100%; 
+    max-width: 100%; 
+    padding: 0; 
+  }
+
+  
+  .question-section .answer-section button {
+    width: 100%; 
+    margin-bottom: 10px; 
+    padding: 12px 15px; 
+    font-size: 1rem; 
+  }
+}
+
+
+@media (max-width: 768px) {
+  h1, h2, h3, h4, h5, h6 {
+    text-align: center; 
+    margin-left: auto; 
+    margin-right: auto; 
+  }
+  
+  
+  .home-content,
+  .about-project-container,
+  .news-list-container,
+  .help-resources-container,
+  .about-me-container {
+    width: 100%;
+    padding: 0 10px; 
+    box-sizing: border-box;
+  }
+}
+
+
+/* --- Estilos para o Cabeçalho --- */
+/* ... seu CSS existente acima ... */
+
+/* --- Estilos para o Menu de Navegação --- */
+/* ... seu CSS existente acima ... */
+
+/* --- Estilos para o Footer --- */
+/* ... seu CSS existente acima ... */
+
+/* --- Estilos para a Página Home --- */
+/* ... seu CSS existente acima ... */
+
+/* --- Estilos para o Chatbot --- */
+/* ... seu CSS existente acima ... */
+
+/* --- Estilos para o Questionário --- */
+/* ... seu CSS existente acima ... */
+
+/* --- Estilos para o Botão de Acessibilidade VLibras --- */
+/* ... seu CSS existente acima ... */

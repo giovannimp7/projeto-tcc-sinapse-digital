@@ -29,10 +29,11 @@ body {
   font-size: 17px;  
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-align: justify;
 }
 
 .container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
-h1, h2, h3, h4, h5, h6 { font-family: var(--fonte-titulo); font-weight: 700; color: var(--cinza-texto); line-height: 1.3; }
+h1, h2, h3, h4, h5, h6 { font-family: var(--fonte-titulo); font-weight: 700; color: var(--cinza-texto); line-height: 1.3;}
 a { color: var(--cor-primaria); text-decoration: none; transition: color 0.2s ease-in-out; }
 a:hover { color: var(--cor-primaria); }
 
@@ -60,14 +61,21 @@ ul li { margin-bottom: 10px; }
 /* --- Estilos do Questionário --- */
 .question-instructions { text-align: center; margin-bottom: 20px; font-size: 1.1em; color: #555; }
 .question-text h2 { font-size: 1.5em; margin-bottom: 20px; }
-.answer-section button { width: 100%; padding: 15px; margin-top: 10px; border: 2px solid #dfdfde; background-color: var(--fundo-claro); border-radius:15px; cursor: pointer; font-family: var(--fonte-titulo); font-size: 1em; transition: background-color 0.2s, border-color 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.10);}
-.answer-section button:hover { background-color: #dfdfde; border-color: var(--cor-primaria); }
-.progress-bar-container { width: 100%; background-color: #e0e0e0; border-radius: 10px; margin-bottom: 15px; margin-top: 15px; overflow: hidden; }
-.progress-bar-fill { height: 15px; background-color: var(--cor-primaria); width: 0%; border-radius: 10px; transition: width 0.4s ease-in-out; }
-.score-section { text-align: left; background-color: var(--fundo-claro); padding: 30px; border-radius: 8px; }
-.score-section h3 { margin-bottom: 15px; }
-.score-section p { margin-bottom: 10px; }
-.score-explanation { font-size: 0.9em; color: #000000; margin-top: 20px; border-top: 1px solid #ddd; padding-top: 20px; }
+.answer-section button {
+  width: 100%;
+  padding: 15px;
+  margin-top: 10px;
+  border: 2px solid #dfdfde;
+  background-color: #dfdfde;
+  box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: var(--fonte-titulo);
+  font-size: 1em;
+  transition: background-color 0.2s, border-color 0.2s;
+  color: var(--cinza-texto);
+}
+.answer-section button:hover { background-color: #fff8e1; border-color: var(--cor-primaria); }
 
 /* --- Estilos da Página de Notícias e Carrossel --- */
 .articles-grid, .news-carousel { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 30px; }
@@ -258,4 +266,42 @@ body.menu-open {
     font-weight: 700;
     color: var(--cinza-texto);
   }
+}
+
+/* --- RESPONSIVIDADE PARA CELULAR (A CORREÇÃO PRINCIPAL) --- */
+@media (max-width: 768px) {
+  body {
+    font-size: 16px; /* Ajusta o tamanho da fonte para melhor leitura em telas pequenas */
+  }
+
+  /* Faz o container principal ocupar mais espaço */
+  .container {
+    padding: 0 15px;
+  }
+
+  /* Ajusta o padding das páginas para não ter bordas grandes */
+  .page-content {
+    padding: 20px;
+    margin: 20px 0; /* Reduz a margem vertical */
+  }
+
+  /* JUSTIFICA OS TEXTOS PRINCIPAIS */
+  .page-content p, .page-content li {
+    text-align: justify;
+  }
+
+  .hero { padding: 40px 15px; }
+  .hero h1 { font-size: 2em; }
+  
+  /* Corrige a responsividade do Header */
+  .hamburger-menu { display: block; background: none; border: none; font-size: 2.5em; cursor: pointer; z-index: 1001; }
+  nav { display: none; }
+  nav.open {
+    display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 25px;
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: var(--fundo-claro); z-index: 1000;
+    animation: fadeIn 0.3s ease-in-out;
+  }
+  nav.open a { margin: 0; font-size: 1.8em; font-weight: 700; color: var(--cinza-texto); }
+  body.menu-open { overflow: hidden; }
 }
