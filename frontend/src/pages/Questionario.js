@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://127.0.0.1:5000';
+
 const sections = {
     depressao: [
       { questionText: '1. Ter pouco interesse ou pouco prazer em fazer as coisas' }, { questionText: '2. Sentir-se "para baixo", deprimido(a) ou sem perspectiva' }, { questionText: '3. Dificuldade para pegar no sono ou permanecer dormindo, ou dormir mais do que de costume' }, { questionText: '4. Sentir-se cansado(a) ou com pouca energia' }, { questionText: '5. Ter falta de apetite ou comer demais' }, { questionText: '6. Sentir-se mal consigo mesmo(a) — ou achar que você é um fracasso ou que decepcionou sua família ou você mesmo(a)?' }, { questionText: '7. Ter dificuldade para se concentrar nas coisas, como ler o jornal ou ver televisão?' }, { questionText: '8. Lentidão para se movimentar ou falar, a ponto das outras pessoas perceberem? Ou o oposto – estar tão agitado(a) que você fica andando de um lado para o outro muito mais do que de costume?' }, { questionText: '9. Pensar em se ferir de alguma maneira ou que seria melhor estar morto(a)?' },
@@ -15,10 +17,10 @@ const sections = {
   const sectionKeys = Object.keys(sections);
 
 function Questionario() {
-  const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [showScore, setShowScore] = useState(false);
-  const [scores, setScores] = useState({});
+    const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
+    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+    const [showScore, setShowScore] = useState(false);
+    const [scores, setScores] = useState({});
 
   const getAnxietyLevel = (score) => {
     if (score >= 15) return 'Grave';
@@ -51,7 +53,7 @@ function Questionario() {
       
       console.log("Enviando os seguintes dados para o back-end:", dataToSend);
 
-      fetch('http://127.0.0.1:5000/api/submit', {
+      fetch(`${API_URL}/api/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(dataToSend),
@@ -64,8 +66,8 @@ function Questionario() {
         console.error('Erro ao enviar dados:', error);
       });
     }
-  }, [showScore, scores]); 
-
+  }, [showScore, scores]);
+  
   const handleAnswerButtonClick = (score) => {
     const currentSectionKey = sectionKeys[currentSectionIndex];
     const updatedScores = { ...scores };
@@ -95,7 +97,7 @@ function Questionario() {
   }
   questionsAnswered += currentQuestionIndex;
   const progressPercentage = (questionsAnswered / totalQuestions) * 100;
-
+  
   return (
     <div className="page-content fade-in">
         <div className="container">
@@ -136,7 +138,6 @@ function Questionario() {
 
             <div className="question-section fade-in" key={currentSectionIndex + '-' + currentQuestionIndex}>
               <div className="question-count">
-                <span>Seção: {currentSectionKey}</span>
               </div>
               <div className="question-text">
                 <h2>{currentQuestion.questionText}</h2>
@@ -155,5 +156,4 @@ function Questionario() {
     </div>
   );
 }
-
 export default Questionario;
