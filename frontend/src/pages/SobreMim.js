@@ -20,7 +20,7 @@ function SobreMim() {
           <h3>Graduando em Engenharia de Computação (IFSP)</h3>
           <br/>
           <p>
-            &nbsp;&nbsp;&nbsp;&nbsp;Seja bem-vindo(a) ao Sinapse Digital. Meu nome é Giovanni, e este projeto é a culminação de anos de estudo, noites de codificação e, acima de tudo, de uma profunda crença de que a tecnologia pode e deve servir como uma força para o bem-estar humano.
+            &nbsp;&nbsp;&nbsp;&nbsp;Seja bem-vindo(a) ao Sinapse Digital. Meu nome é Giovanni, e este projeto é a culminação de anos de estudo, noites em claro e, acima de tudo, de uma profunda crença de que a tecnologia pode e deve servir como uma força para o bem-estar humano.
           </p>
           <hr></hr>
           <h3>A Motivação</h3>
