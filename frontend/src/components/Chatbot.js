@@ -1,17 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://127.0.0.1:5000';
+import { API_URL } from '../config'; // 
 
 function Chatbot({ isHome, onClose }) {
+
   const [message, setMessage] = useState('');
   const [chatHistory, setChatHistory] = useState([
-    { text: 'Olá! Sou a Serena. Sinta-se à vontade para compartilhar como você está se sentindo.', sender: 'ai' }
+    { text: 'Oi! Eu sou a Serena. Sinta-se à vontade para compartilhar como você está se sentindo.', sender: 'ai' }
   ]);
   const [isLoading, setIsLoading] = useState(false);
   
   const historyContainerRef = useRef(null);
   const textareaRef = useRef(null);
-
 
   useEffect(() => {
     const container = historyContainerRef.current;
@@ -35,7 +34,7 @@ function Chatbot({ isHome, onClose }) {
     setMessage('');
     setIsLoading(true);
     try {
-      const response = await fetch('http://127.0.0.1:5000/api/chat', {
+      const response = await fetch(`${API_URL}/api/chat`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: message }),
       });
       if (!response.ok) throw new Error(`Erro do servidor: ${response.status}`);
@@ -70,13 +69,11 @@ function Chatbot({ isHome, onClose }) {
             <button className="close-chatbot-button" onClick={onClose}>×</button>
           )}
         </div>
-        {/* 3. MUDANÇA: A ref agora está no container principal do histórico */}
         <div className="chatbot-history" ref={historyContainerRef}>
           {chatHistory.map((msg, index) => (
             <div key={index} className={`chat-message ${msg.sender}`}><p>{msg.text}</p></div>
           ))}
           {isLoading && ( <div className="chat-message ai"><p className="loading-dots"><span>.</span><span>.</span><span>.</span></p></div> )}
-          {/* A div extra de ref foi removida daqui */}
         </div>
         <div className="chatbot-input">
           <textarea

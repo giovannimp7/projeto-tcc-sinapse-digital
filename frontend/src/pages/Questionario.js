@@ -1,26 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://127.0.0.1:5000';
-
-const sections = {
-    depressao: [
-      { questionText: '1. Ter pouco interesse ou pouco prazer em fazer as coisas' }, { questionText: '2. Sentir-se "para baixo", deprimido(a) ou sem perspectiva' }, { questionText: '3. Dificuldade para pegar no sono ou permanecer dormindo, ou dormir mais do que de costume' }, { questionText: '4. Sentir-se cansado(a) ou com pouca energia' }, { questionText: '5. Ter falta de apetite ou comer demais' }, { questionText: '6. Sentir-se mal consigo mesmo(a) — ou achar que você é um fracasso ou que decepcionou sua família ou você mesmo(a)?' }, { questionText: '7. Ter dificuldade para se concentrar nas coisas, como ler o jornal ou ver televisão?' }, { questionText: '8. Lentidão para se movimentar ou falar, a ponto das outras pessoas perceberem? Ou o oposto – estar tão agitado(a) que você fica andando de um lado para o outro muito mais do que de costume?' }, { questionText: '9. Pensar em se ferir de alguma maneira ou que seria melhor estar morto(a)?' },
-    ],
-    ansiedade: [
-      { questionText: '1. Sentir-se nervoso(a), ansioso(a) ou no limite' }, { questionText: '2. Não ser capaz de parar ou controlar as preocupações' }, { questionText: '3. Preocupar-se muito com diversas coisas' }, { questionText: '4. Ter dificuldade para relaxar' }, { questionText: '5. Ficar tão inquieto(a) que se tornou difícil permanecer parado(a)?' }, { questionText: '6. Ficar facilmente irritado(a) ou irritável?' }, { questionText: '7. Sentir medo como se algo horrível fosse acontecer?' },
-    ],
-  };
-  const answerOptions = [
-    { answerText: 'Nenhuma vez', score: 0 }, { answerText: 'Vários dias', score: 1 }, { answerText: 'Mais da metade dos dias', score: 2 }, { answerText: 'Quase todos os dias', score: 3 },
-  ];
-  const sectionKeys = Object.keys(sections);
+import { API_URL } from '../config'; 
 
 function Questionario() {
-    const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
-    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-    const [showScore, setShowScore] = useState(false);
-    const [scores, setScores] = useState({});
+
+  const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [showScore, setShowScore] = useState(false);
+  const [scores, setScores] = useState({});
 
   const getAnxietyLevel = (score) => {
     if (score >= 15) return 'Grave';
@@ -66,8 +53,21 @@ function Questionario() {
         console.error('Erro ao enviar dados:', error);
       });
     }
-  }, [showScore, scores]);
+  }, [showScore, scores]); 
   
+  const sections = {
+    depressao: [
+      { questionText: '1. Ter pouco interesse ou pouco prazer em fazer as coisas' }, { questionText: '2. Sentir-se "para baixo", deprimido(a) ou sem perspectiva' }, { questionText: '3. Dificuldade para pegar no sono ou permanecer dormindo, ou dormir mais do que de costume' }, { questionText: '4. Sentir-se cansado(a) ou com pouca energia' }, { questionText: '5. Ter falta de apetite ou comer demais' }, { questionText: '6. Sentir-se mal consigo mesmo(a) — ou achar que você é um fracasso ou que decepcionou sua família ou você mesmo(a)?' }, { questionText: '7. Ter dificuldade para se concentrar nas coisas, como ler o jornal ou ver televisão?' }, { questionText: '8. Lentidão para se movimentar ou falar, a ponto das outras pessoas perceberem? Ou o oposto – estar tão agitado(a) que você fica andando de um lado para o outro muito mais do que de costume?' }, { questionText: '9. Pensar em se ferir de alguma maneira ou que seria melhor estar morto(a)?' },
+    ],
+    ansiedade: [
+      { questionText: '1. Sentir-se nervoso(a), ansioso(a) ou no limite' }, { questionText: '2. Não ser capaz de parar ou controlar as preocupações' }, { questionText: '3. Preocupar-se muito com diversas coisas' }, { questionText: '4. Ter dificuldade para relaxar' }, { questionText: '5. Ficar tão inquieto(a) que se tornou difícil permanecer parado(a)?' }, { questionText: '6. Ficar facilmente irritado(a) ou irritável?' }, { questionText: '7. Sentir medo como se algo horrível fosse acontecer?' },
+    ],
+  };
+  const answerOptions = [
+    { answerText: 'Nenhuma vez', score: 0 }, { answerText: 'Alguns dias', score: 1 }, { answerText: 'Mais da metade dos dias', score: 2 }, { answerText: 'Quase todos os dias', score: 3 },
+  ];
+  const sectionKeys = Object.keys(sections);
+
   const handleAnswerButtonClick = (score) => {
     const currentSectionKey = sectionKeys[currentSectionIndex];
     const updatedScores = { ...scores };
@@ -97,7 +97,7 @@ function Questionario() {
   }
   questionsAnswered += currentQuestionIndex;
   const progressPercentage = (questionsAnswered / totalQuestions) * 100;
-  
+
   return (
     <div className="page-content fade-in">
         <div className="container">
@@ -156,4 +156,5 @@ function Questionario() {
     </div>
   );
 }
+
 export default Questionario;
