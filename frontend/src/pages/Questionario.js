@@ -8,6 +8,7 @@ function Questionario() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [showScore, setShowScore] = useState(false);
   const [scores, setScores] = useState({});
+  const [history, setHistory] = useState([]);
 
   const getAnxietyLevel = (score) => {
     if (score >= 15) return 'Grave';
@@ -69,6 +70,9 @@ function Questionario() {
   const sectionKeys = Object.keys(sections);
 
   const handleAnswerButtonClick = (score) => {
+    const newHistory = [...history, { currentSectionIndex, currentQuestionIndex, scores }];
+    setHistory(newHistory);
+
     const currentSectionKey = sectionKeys[currentSectionIndex];
     const updatedScores = { ...scores };
     updatedScores[currentSectionKey] = (updatedScores[currentSectionKey] || 0) + score;
@@ -85,6 +89,16 @@ function Questionario() {
       } else {
         setShowScore(true);
       }
+    }
+  };
+
+  const handleBackButtonClick = () => {
+    if (history.length > 0) {
+      const lastState = history[history.length - 1];
+      setCurrentSectionIndex(lastState.currentSectionIndex);
+      setCurrentQuestionIndex(lastState.currentQuestionIndex);
+      setScores(lastState.scores);
+      setHistory(history.slice(0, -1));
     }
   };
   
@@ -148,6 +162,11 @@ function Questionario() {
                     {answerOption.answerText}
                   </button>
                 ))}
+              </div>
+              <div className="navigation-buttons">
+                <button onClick={handleBackButtonClick} disabled={history.length === 0}>
+                  Voltar
+                </button>
               </div>
             </div>
           </>
