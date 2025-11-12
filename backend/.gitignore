@@ -7,3 +7,9 @@ venv/
 # Pastas de cache do Python
 __pycache__/
 *.pyc
+
+# Ignorar dependências do Node
+node_modules/
+
+# Arquivos de sistema
+.DS_Store

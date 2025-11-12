@@ -164,7 +164,7 @@ function Questionario() {
                 ))}
               </div>
               <div className="navigation-buttons">
-                <button onClick={handleBackButtonClick} disabled={history.length === 0}>
+                <button onClick={handleBackButtonClick} disabled={history.length === 0} className="cta-button">
                   Voltar
                 </button>
               </div>
