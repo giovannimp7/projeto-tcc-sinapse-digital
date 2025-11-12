@@ -1,20 +1,33 @@
 import os
+import traceback
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import google.generativeai as genai
 from dotenv import load_dotenv
 import psycopg2
 
+# Carrega .env
 load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
+# Lê API key e configura GenAI
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+if not GOOGLE_API_KEY:
+    print("Erro: variável de ambiente GOOGLE_API_KEY não encontrada. Verifique seu .env")
+    exit(1)
+
 try:
-    genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
+    genai.configure(api_key=GOOGLE_API_KEY)
     print("API do Gemini configurada com sucesso.")
-except (AttributeError, KeyError) as e:
-    print("Erro: A chave de API do Google não foi encontrada. Verifique seu arquivo .env")
-    exit()
+except Exception:
+    print("Erro ao configurar o GenAI SDK:")
+    traceback.print_exc()
+    exit(1)
+
+# Modelo padrão (use sempre o ID que comece com 'models/')
+MODEL_ID = os.getenv("MODEL", "models/gemini-1.5-flash")
+
 
 def get_db_connection():
     conn = psycopg2.connect(
@@ -27,14 +40,13 @@ def get_db_connection():
 
 @app.route('/api/submit', methods=['POST'])
 def submit_results():
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     print("--- Dados Completos Recebidos do Front-End ---")
     print(data)
-    
     try:
         scores = data.get('scores', {})
         levels = data.get('levels', {})
-        
+
         score_depressao = scores.get('depressao')
         score_ansiedade = scores.get('ansiedade')
         level_depressao = levels.get('depression')
@@ -53,22 +65,38 @@ def submit_results():
         conn.commit()
         cur.close()
         conn.close()
-        
+
         print("--- Dados salvos no banco de dados com sucesso! ---")
         return jsonify({"status": "sucesso", "message": "Scores e níveis recebidos e salvos!"})
 
-    except Exception as e:
-        print(f"ERRO AO SALVAR NO BANCO DE DADOS: {e}")
+    except Exception:
+        print("ERRO AO SALVAR NO BANCO DE DADOS:")
+        traceback.print_exc()
         return jsonify({"status": "erro", "message": "Falha ao salvar os resultados."}), 500
+
+
+@app.route('/api/models', methods=['GET'])
+def list_models():
+    """Rota de debug para listar modelos disponíveis para a chave atual."""
+    try:
+        models = genai.list_models()
+        model_names = [m.name for m in models]
+        return jsonify({"status": "sucesso", "models": model_names})
+    except Exception:
+        print("Falha ao listar modelos:")
+        traceback.print_exc()
+        return jsonify({"status": "erro", "message": "Não foi possível listar modelos."}), 500
 
 
 @app.route('/api/chat', methods=['POST'])
 def chat_with_gemini():
-    user_message = request.get_json().get('message')
+    payload = request.get_json(silent=True) or {}
+    user_message = payload.get('message')
     if not user_message:
         return jsonify({"status": "erro", "message": "Nenhuma mensagem recebida."}), 400
 
-    print(f"\n--- Mensagem do Usuário Recebida: '{user_message}' ---")
+    print(f"--- Mensagem do Usuário Recebida: '{user_message}' ---")
+
     prompt = f"""
     Aja como uma assistente de acolhimento chamada 'Serena'. Sua personalidade é calma, sábia, e direta. Sua missão é oferecer um espaço seguro para reflexão.
     **REGRAS CRÍTICAS:**
@@ -81,17 +109,32 @@ def chat_with_gemini():
     **Contexto:** O usuário enviou a seguinte mensagem: "{user_message}"
     **Sua Resposta (como Serena):**
     """
+
     try:
         print("--- Enviando para o Gemini... ---")
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel(MODEL_ID)
         response = model.generate_content(prompt)
-        ai_response = response.text
+
+        # Tenta extrair a resposta de formas diferentes, dependendo da versão do SDK/retorno
+        ai_response = getattr(response, "text", None)
+        if ai_response is None:
+            # ver se há output/contents
+            try:
+                ai_response = response.output[0].content[0].text
+            except Exception:
+                ai_response = str(response)
+
         print(f"--- Resposta da IA: '{ai_response}' ---")
         return jsonify({"status": "sucesso", "resposta_ia": ai_response})
-    except Exception as e:
-        print(f"ERRO AO COMUNICAR COM A IA: {e}")
+
+    except Exception:
+        print("ERRO AO COMUNICAR COM A IA:")
+        traceback.print_exc()
         return jsonify({"status": "erro", "message": "Não foi possível processar a sua mensagem com a IA."}), 500
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.getenv('PORT', 5000))
+    host = os.getenv('HOST', '0.0.0.0')
+    print(f"Starting app on {host}:{port} — MODEL_ID={MODEL_ID}")
+    app.run(host=host, port=port, debug=True)
