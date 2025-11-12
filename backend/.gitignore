@@ -13,3 +13,5 @@ node_modules/
 
 # Arquivos de sistema
 .DS_Store
+
+.env.local

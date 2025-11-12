@@ -1,4 +1,5 @@
 import os
+import re
 import traceback
 from flask import Flask, jsonify, request
 from flask_cors import CORS
@@ -26,7 +27,7 @@ except Exception:
     exit(1)
 
 # Modelo padrão (use sempre o ID que comece com 'models/')
-MODEL_ID = os.getenv("MODEL", "models/gemini-1.5-flash")
+MODEL_ID = os.getenv("MODEL", "models/gemini-2.5-flash")
 
 
 def get_db_connection():
@@ -36,6 +37,62 @@ def get_db_connection():
         port=os.environ['DB_PORT']
     )
     return conn
+
+
+def format_response_into_paragraphs(text: str, sentences_per_paragraph: int = 2) -> str:
+    """
+    If the model returned a blob of text with no paragraph breaks,
+    try to split it into readable paragraphs.
+
+    Strategy:
+    - If text already contains double newlines, return as-is.
+    - Otherwise split into sentences (roughly) using punctuation (.!?)
+      and join groups of `sentences_per_paragraph` sentences with double newlines.
+    - This is a heuristic to improve readability for compact responses.
+    """
+    if not text:
+        return text
+
+    # If the text already has meaningful paragraphs, keep it
+    if "\n\n" in text or text.count("\n") > 3:
+        return text.strip()
+
+    # Normalize whitespace
+    text = text.strip().replace("\r\n", "\n").replace("\r", "\n")
+    # Protect common abbreviations (basic list) to avoid splitting inside them
+    # (This is a small heuristic; can be expanded if needed)
+    abbreviations = [
+        "Sr.", "Sra.", "Dr.", "Dra.", "Srta.", "etc.", "e.g.", "i.e.", "vs.", "Prof."
+    ]
+    placeholder_map = {}
+    for i, abbr in enumerate(abbreviations):
+        key = f"@@ABBR{i}@@"
+        placeholder_map[key] = abbr
+        text = text.replace(abbr, key)
+
+    # Split into sentences by punctuation followed by space
+    parts = re.split(r'(?<=[\.\?\!])\s+', text)
+    # Restore abbreviations
+    parts = [p.replace(k, v) for p in parts for k, v in placeholder_map.items()] if placeholder_map else parts
+
+    # If splitting produced only one chunk, fallback to naive splitting on commas (less ideal)
+    if len(parts) == 1:
+        parts = re.split(r',\s+', text)
+
+    # Group sentences into paragraphs
+    paras = []
+    for i in range(0, len(parts), sentences_per_paragraph):
+        para = " ".join(s.strip() for s in parts[i:i + sentences_per_paragraph] if s.strip())
+        if para:
+            paras.append(para)
+
+    formatted = "\n\n".join(paras).strip()
+
+    # Final cleanup: restore any placeholders that might remain
+    for k, v in placeholder_map.items():
+        formatted = formatted.replace(k, v)
+
+    return formatted if formatted else text
 
 
 @app.route('/api/submit', methods=['POST'])
@@ -97,35 +154,54 @@ def chat_with_gemini():
 
     print(f"--- Mensagem do Usuário Recebida: '{user_message}' ---")
 
+    # Improved prompt: ask the model explicitly to return well-formatted paragraphs.
+    # This helps the model obey a formatting preference, reducing the need for heavy post-processing.
     prompt = f"""
-    Aja como uma assistente de acolhimento chamada 'Serena'. Sua personalidade é calma, sábia, e direta. Sua missão é oferecer um espaço seguro para reflexão.
-    **REGRAS CRÍTICAS:**
-    1.  **NÃO DÊ DIAGNÓSTICOS:** Jamais diga que o usuário "tem" qualquer transtorno.
-    2.  **NÃO PRESCREVA TRATAMENTOS:** Não sugira medicamentos.
-    3.  **FOCO EM ACOLHIMENTO REFLEXIVO:** Valide os sentimentos do usuário (ex: "É compreensível que se sinta assim.") e ofereça perspectivas que incentivem a introspecção.
-    4.  **INCENTIVE A AJUDA PROFISSIONAL:** Sua principal diretriz é sempre, ao final da conversa ou quando apropriado, incentivar gentilmente o usuário a procurar um profissional qualificado (psicólogo, terapeuta) para uma jornada de autoconhecimento mais profunda.
-    5.  **SEGURANÇA PRIMEIRO:** Se a conversa indicar qualquer risco de vida, sua única resposta DEVE SER direcionar para o CVV (Centro de Valorização da Vida) no Brasil, informando o telefone 188 e o site www.cvv.org.br, e reforçar a busca por ajuda profissional imediata.
-    6.  **SEJA DIRETA:** Se a mensagem do usuário for confusa, vaga ou sem sentido (ex: "bla bla bla"), responda apenas: "Não compreendi sua mensagem. Poderia reformular?" Não tente interpretar ou acolher mensagens sem sentido.
-    **Contexto:** O usuário enviou a seguinte mensagem: "{user_message}"
-    **Sua Resposta (como Serena):**
-    """
+Aja como uma assistente de acolhimento chamada 'Serena'. Sua personalidade é calma, sábia, e direta. Sua missão é oferecer um espaço seguro para reflexão.
+
+INSTRUÇÕES DE FORMATAÇÃO (IMPORTANTE):
+- Responda em **parágrafos claros**, separando cada parágrafo com uma linha em branco (duas quebras de linha).
+- Cada parágrafo deve conter no máximo 2-3 frases para facilitar a leitura.
+- Não forneça listas longas sem quebras; prefira parágrafos curtos.
+- Evite usar formatação Markdown complexa — texto simples com quebras de parágrafo é suficiente.
+- Se for necessário direcionar para ajuda profissional, inclua claramente o telefone 188 e o site www.cvv.org.br em um parágrafo separado.
+
+REGRAS CRÍTICAS:
+1. NÃO DÊ DIAGNÓSTICOS: Jamais diga que o usuário "tem" qualquer transtorno.
+2. NÃO PRESCREVA TRATAMENTOS: Não sugira medicamentos.
+3. FOCO EM ACOLHIMENTO REFLEXIVO: Valide sentimentos e ofereça perspectivas que incentivem introspecção.
+4. INCENTIVE A AJUDA PROFISSIONAL: Ao final, incentive buscar um profissional qualificado quando apropriado.
+5. SEGURANÇA PRIMEIRO: Se houver risco de vida, direcione para o CVV (188, www.cvv.org.br).
+6. SEJA DIRETA: Se a mensagem for confusa, responda apenas: "Não compreendi sua mensagem. Poderia reformular?"
+
+Contexto: O usuário enviou a seguinte mensagem:
+\"\"\"{user_message}\"\"\"
+
+Sua resposta (como Serena):
+"""
 
     try:
         print("--- Enviando para o Gemini... ---")
         model = genai.GenerativeModel(MODEL_ID)
         response = model.generate_content(prompt)
 
-        # Tenta extrair a resposta de formas diferentes, dependendo da versão do SDK/retorno
+        # O SDK pode devolver diferentes estruturas dependendo da versão.
         ai_response = getattr(response, "text", None)
         if ai_response is None:
-            # ver se há output/contents
+            # tenta caminhos alternativos
             try:
                 ai_response = response.output[0].content[0].text
             except Exception:
                 ai_response = str(response)
 
-        print(f"--- Resposta da IA: '{ai_response}' ---")
-        return jsonify({"status": "sucesso", "resposta_ia": ai_response})
+        # Trim and basic cleanup
+        ai_response = ai_response.strip() if isinstance(ai_response, str) else str(ai_response)
+
+        # Formatação adicional (heurística)
+        formatted = format_response_into_paragraphs(ai_response, sentences_per_paragraph=2)
+
+        print(f"--- Resposta (formatada) da IA: '''\\n{formatted}\\n''' ---")
+        return jsonify({"status": "sucesso", "resposta_ia": formatted})
 
     except Exception:
         print("ERRO AO COMUNICAR COM A IA:")
