@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { API_URL } from '../config'; 
+import { API_URL } from '../config';
 
 function Questionario() {
 
@@ -9,6 +9,9 @@ function Questionario() {
   const [showScore, setShowScore] = useState(false);
   const [scores, setScores] = useState({});
   const [history, setHistory] = useState([]);
+  const [showCvvAlert, setShowCvvAlert] = useState(false);
+  const [cvvTriggered, setCvvTriggered] = useState(false);
+  const [pendingAction, setPendingAction] = useState(null);
 
   const getAnxietyLevel = (score) => {
     if (score >= 15) return 'Grave';
@@ -69,26 +72,48 @@ function Questionario() {
   ];
   const sectionKeys = Object.keys(sections);
 
-  const handleAnswerButtonClick = (score) => {
-    const newHistory = [...history, { currentSectionIndex, currentQuestionIndex, scores }];
+  const advanceAfterAnswer = (score, sectionKey, sectionIdx, questionIdx, currentScores) => {
+    const newHistory = [...history, { currentSectionIndex: sectionIdx, currentQuestionIndex: questionIdx, scores: currentScores }];
     setHistory(newHistory);
 
-    const currentSectionKey = sectionKeys[currentSectionIndex];
-    const updatedScores = { ...scores };
-    updatedScores[currentSectionKey] = (updatedScores[currentSectionKey] || 0) + score;
+    const updatedScores = { ...currentScores };
+    updatedScores[sectionKey] = (updatedScores[sectionKey] || 0) + score;
     setScores(updatedScores);
 
-    const nextQuestionIndex = currentQuestionIndex + 1;
-    if (nextQuestionIndex < sections[currentSectionKey].length) {
+    const nextQuestionIndex = questionIdx + 1;
+    if (nextQuestionIndex < sections[sectionKey].length) {
       setCurrentQuestionIndex(nextQuestionIndex);
     } else {
-      const nextSectionIndex = currentSectionIndex + 1;
+      const nextSectionIndex = sectionIdx + 1;
       if (nextSectionIndex < sectionKeys.length) {
         setCurrentSectionIndex(nextSectionIndex);
         setCurrentQuestionIndex(0);
       } else {
         setShowScore(true);
       }
+    }
+  };
+
+  const handleAnswerButtonClick = (score) => {
+    const currentSectionKey = sectionKeys[currentSectionIndex];
+    const isPhq9LastQuestion = currentSectionKey === 'depressao' && currentQuestionIndex === 8;
+
+    if (isPhq9LastQuestion && score > 0) {
+      setCvvTriggered(true);
+      setPendingAction({ score, sectionKey: currentSectionKey, sectionIdx: currentSectionIndex, questionIdx: currentQuestionIndex, currentScores: scores });
+      setShowCvvAlert(true);
+      return;
+    }
+
+    advanceAfterAnswer(score, currentSectionKey, currentSectionIndex, currentQuestionIndex, scores);
+  };
+
+  const handleCvvAlertContinue = () => {
+    setShowCvvAlert(false);
+    if (pendingAction) {
+      const { score, sectionKey, sectionIdx, questionIdx, currentScores } = pendingAction;
+      setPendingAction(null);
+      advanceAfterAnswer(score, sectionKey, sectionIdx, questionIdx, currentScores);
     }
   };
 
@@ -117,12 +142,57 @@ function Questionario() {
         <div className="container">
         <h1>Anamnese Digital</h1>
         <hr />
-        
+
+        {showCvvAlert && (
+          <div style={{
+            position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+            backgroundColor: 'rgba(0,0,0,0.75)', zIndex: 9999,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '1rem'
+          }}>
+            <div style={{
+              backgroundColor: '#fff', borderRadius: '12px', padding: '2rem',
+              maxWidth: '480px', width: '100%', textAlign: 'center',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.3)'
+            }}>
+              <h2 style={{ color: '#c0392b', marginBottom: '0.75rem' }}>Você não está sozinho(a)</h2>
+              <p style={{ marginBottom: '1rem' }}>
+                Percebemos que você pode estar passando por um momento muito difícil.
+                Se você está pensando em se machucar, por favor procure ajuda agora.
+              </p>
+              <p style={{ fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+                CVV – Centro de Valorização da Vida
+              </p>
+              <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#c0392b', marginBottom: '0.5rem' }}>
+                188
+              </p>
+              <p style={{ marginBottom: '1.5rem' }}>
+                Disponível 24 horas, 7 dias por semana. Gratuito e sigiloso.
+                Também pelo site: <a href="https://www.cvv.org.br" target="_blank" rel="noopener noreferrer">www.cvv.org.br</a>
+              </p>
+              <button onClick={handleCvvAlertContinue} className="cta-button">
+                Estou ciente, continuar o questionário
+              </button>
+            </div>
+          </div>
+        )}
+
         {showScore ? (
           <div className="score-section fade-in">
             <h2>Resultado da Autoavaliação</h2>
             <p>Este é um resumo inicial baseado em suas respostas. Ele serve como um ponto de partida para a autoconsciência e não constitui um diagnóstico.</p>
-            
+
+            {cvvTriggered && (
+              <div style={{
+                backgroundColor: '#fdecea', border: '2px solid #c0392b',
+                borderRadius: '8px', padding: '1rem 1.25rem', marginBottom: '1.5rem'
+              }}>
+                <strong style={{ color: '#c0392b' }}>Atenção:</strong> Você indicou pensamentos de autoextermínio.
+                Se precisar de apoio imediato, ligue para o <strong>CVV: 188</strong> (24h, gratuito) ou acesse{' '}
+                <a href="https://www.cvv.org.br" target="_blank" rel="noopener noreferrer">www.cvv.org.br</a>.
+              </div>
+            )}
+
             <div className="results">
               <h3>Sintomas de Depressão (PHQ-9)</h3>
               <p><strong>Pontuação: {scores.depressao || 0}</strong> (Nível Sugerido: {getDepressionLevel(scores.depressao || 0)})</p>

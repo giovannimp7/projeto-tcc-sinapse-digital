@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m venv venv)",
+      "Bash(py --version)",
+      "Bash(py -3 --version)",
+      "Bash(npm run *)",
+      "Bash(npm install *)",
+      "Bash(CI=true npm test *)"
+    ]
+  }
+}
